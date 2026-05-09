@@ -19,6 +19,9 @@ export component MainWindow inherits Window {
     in-out property <int> selected-file-index: -1;
     in-out property <int> selected-location-index: -1;
 
+    in-out property <string> search-query: "";
+    in-out property <int> sort-index: 0;
+
     callback navigate-back();
     callback navigate-forward();
     callback navigate-up();
@@ -27,6 +30,8 @@ export component MainWindow inherits Window {
     callback file-selected(int);
     callback location-selected(int);
     callback file-double-click(int);
+    callback search-changed(string);
+    callback sort-changed(int);
 
     HorizontalLayout {
         spacing: 0px;
@@ -44,11 +49,15 @@ export component MainWindow inherits Window {
 
             toolbar := Toolbar {
                 current-path <=> root.current-path;
+                search-query <=> root.search-query;
+                sort-index <=> root.sort-index;
                 navigate-back => { root.navigate-back(); }
                 navigate-forward => { root.navigate-forward(); }
                 navigate-up => { root.navigate-up(); }
                 path-changed => { root.navigate-to(root.current-path); }
                 refresh => { root.refresh-files(); }
+                search-changed => { root.search-changed(root.search-query); }
+                sort-changed => { root.sort-changed(root.sort-index); }
             }
 
             file-list := FileList {
