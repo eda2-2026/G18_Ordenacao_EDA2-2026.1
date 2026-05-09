@@ -9,7 +9,7 @@ medindo desempenho e eficiência em cenários práticos.
 
 ## Stack
 
-- **Linguagem:** Rust
+- **Linguagem:** Rust.
 - **UI:** [Slint](https://slint.dev/) (frontend reutilizado do projeto [windows-fast-file-explorer](https://github.com/Bappoz/windows-fast-file-explorer))
 - **Sistema de arquivos:** WalkDir + rayon (paralelismo)
 
