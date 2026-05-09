@@ -1,0 +1,54 @@
+import { Button, LineEdit, HorizontalBox } from "std-widgets.slint";
+import { Theme } from "../styles/theme.slint";
+
+export component Toolbar inherits Rectangle {
+    in-out property <string> current-path: "C:\\";
+
+    callback navigate-forward();
+    callback navigate-back();
+    callback navigate-up();
+    callback path-changed();
+    callback refresh();
+
+    height: 48px;
+    background: Theme.surface;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+
+    HorizontalLayout {
+        padding: Theme.padding-medium;
+        spacing: 8px;
+
+        // Botões de navegação
+        Button {
+            text: "←";
+            max-width: 40px;
+            clicked => { navigate-back(); }
+        }
+        Button {
+            text: "→";
+            max-width: 40px;
+            clicked => { navigate-forward(); }
+        }
+        Button {
+            text: "↑";
+            max-width: 40px;
+            clicked => { navigate-up(); }
+        }
+
+        LineEdit {
+            text <=> current-path;
+            placeholder-text: "Caminho...";
+            edited => {
+                root.path-changed();
+            }
+        }
+
+        // Botão atualizar
+        Button {
+            text: "⟳";
+            max-width: 40px;
+            clicked => { refresh(); }
+        }
+    }
+}

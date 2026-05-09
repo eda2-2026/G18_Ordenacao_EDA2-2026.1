@@ -1,0 +1,66 @@
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "../styles/theme.slint";
+
+export struct Location {
+    name: string,
+    path: string,
+    icon: string,
+}
+
+export component Sidebar inherits Rectangle {
+    in property <[Location]> locations: [];
+    in property <int> selected-index: -1;
+    
+    callback location-clicked(int);
+    
+    width: 200px;
+    background: Theme.surface;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+
+    ScrollView {
+        VerticalLayout {
+            padding: Theme.padding-medium;
+            spacing: 4px;
+            
+            Text {
+                text: "Locais Rápidos";
+                color: Theme.text-secondary;
+                font-size: Theme.font-small;
+                font-weight: 600;
+            }
+            
+            for location[index] in locations: Rectangle {
+                height: 36px;
+                background: index == selected-index ? Theme.selected :
+                           touch.has-hover ? Theme.surface-hover :
+                           transparent;
+                border-radius: Theme.border-radius;
+                
+                touch := TouchArea {
+                    clicked => {
+                        root.location-clicked(index);
+                    }
+                }
+                
+                HorizontalLayout {
+                    padding: Theme.padding-small;
+                    spacing: 8px;
+                    
+                    Text {
+                        text: location.icon;
+                        font-size: Theme.font-large;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: location.name;
+                        color: Theme.text-primary;
+                        font-size: Theme.font-medium;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

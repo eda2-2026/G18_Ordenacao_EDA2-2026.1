@@ -1,0 +1,69 @@
+import { ScrollView } from "std-widgets.slint";
+import { FileItem, FileInfo } from "./file-item.slint";
+import { Theme } from "../styles/theme.slint";
+
+export component FileList inherits Rectangle {
+    in property <[FileInfo]> files: [];
+    in-out property <int> selected-index: -1;
+
+    callback file-clicked(int);
+    callback file-double-click(int);
+
+    background: Theme.surface;
+
+    VerticalLayout {
+        // Cabeçalho
+        header := Rectangle {
+            height: 28px;
+            background: Theme.background;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        
+
+            HorizontalLayout {
+                padding: Theme.padding-small;
+                spacing: 8px;
+
+                Rectangle { width: 20px; }
+
+                Text {
+                    text: "Nome";
+                    color: Theme.text-primary;
+                    font-size: Theme.font-medium;
+                    horizontal-alignment: left;
+                }
+
+                Text {
+                        text: "Tamanho";
+                        color: Theme.text-primary;
+                        font-size: Theme.font-medium;
+                        horizontal-alignment: right;
+                        min-width: 80px;
+                    }
+                    
+                Text {
+                    text: "Data Modificada";
+                    color: Theme.text-primary;
+                    font-size: Theme.font-medium;
+                    horizontal-alignment: right;
+                    min-width: 120px;
+                }
+            }
+        }
+        ScrollView {
+            VerticalLayout {
+                for file[index] in files: FileItem {
+                    file-info: file;
+                    selected: index == selected-index;
+                    clicked => {
+                        root.selected-index = index;
+                        root.file-clicked(index);
+                    }
+                    double-clicked => {
+                        root.file-double-click(index)
+                    }
+                }
+            }
+        }
+    }    
+}

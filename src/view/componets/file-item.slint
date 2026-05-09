@@ -1,0 +1,78 @@
+import { Theme } from "../styles/theme.slint";
+
+export struct FileInfo {
+    name: string,
+    path: string,
+    size: string,
+    date: string,
+    is-directory: bool,
+}
+
+export component FileItem inherits Rectangle {
+    in property <FileInfo> file-info;
+    in property <bool> selected: false;
+
+    // Propriedade interna para rastrear o tempo do último clique
+    property <duration> last-click-time;
+
+    callback clicked();
+    callback double-clicked();
+
+    touch-area := TouchArea {
+        clicked => {
+            // Se o tempo entre o clique atual e o último for menor que 300ms
+            if (animation-tick() - root.last-click-time < 300ms) {
+                root.double-clicked();
+            } else {
+                root.clicked();
+            }
+            root.last-click-time = animation-tick();
+        }
+    }
+
+    height: 32px;
+    background: selected ? Theme.selected :
+                touch-area.has-hover ? Theme.surface-hover :
+                transparent;
+
+    HorizontalLayout {
+        padding: Theme.padding-small;
+        spacing: 8px;
+
+        Rectangle {
+            width: 20px;
+            height: 20px;
+            background: file-info.is-directory ? #ffd700 : #87ceeb;
+            border-radius: 2px;
+        }
+        
+        // Name
+        Text {
+            text: file-info.name;
+            color: Theme.text-primary;
+            font-size: Theme.font-medium;
+            horizontal-alignment: left;
+            vertical-alignment: center;
+        }
+
+        // Size
+        Text {
+            text: file-info.size;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            min-width: 80px;
+        }
+
+        // Date
+        Text {
+            text: file-info.date;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            min-width: 120px;
+        }
+    }
+}

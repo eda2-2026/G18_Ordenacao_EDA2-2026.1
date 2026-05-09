@@ -1,0 +1,42 @@
+import { Theme } from "../styles/theme.slint";
+
+export component StatusBar inherits Rectangle {
+    in property <string> item-count: "0 itens";
+    in property <string> selected-info: "";
+    in property <string> disk-space: "";
+    
+    height: 24px;
+    background: Theme.background;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;    
+    HorizontalLayout {
+        padding-left: Theme.padding-medium;
+        padding-right: Theme.padding-medium;
+        spacing: 16px;
+        
+        Text {
+            text: item-count;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+        
+        Text {
+            text: selected-info;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+        
+        Rectangle {
+            horizontal-stretch: 1;
+        }
+        
+        Text {
+            text: disk-space;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+    }
+}
