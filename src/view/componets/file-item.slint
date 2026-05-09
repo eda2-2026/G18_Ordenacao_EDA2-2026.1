@@ -11,8 +11,8 @@ export struct FileInfo {
 export component FileItem inherits Rectangle {
     in property <FileInfo> file-info;
     in property <bool> selected: false;
+    in property <bool> odd-row: false;
 
-    // Propriedade interna para rastrear o tempo do último clique
     property <duration> last-click-time;
 
     callback clicked();
@@ -20,8 +20,7 @@ export component FileItem inherits Rectangle {
 
     touch-area := TouchArea {
         clicked => {
-            // Se o tempo entre o clique atual e o último for menor que 300ms
-            if (animation-tick() - root.last-click-time < 300ms) {
+            if (animation-tick() - root.last-click-time < 400ms) {
                 root.double-clicked();
             } else {
                 root.clicked();
@@ -30,32 +29,37 @@ export component FileItem inherits Rectangle {
         }
     }
 
-    height: 32px;
+    height: 28px;
     background: selected ? Theme.selected :
                 touch-area.has-hover ? Theme.surface-hover :
+                odd-row ? Theme.surface-alt :
                 transparent;
 
     HorizontalLayout {
-        padding: Theme.padding-small;
+        padding-left: Theme.padding-medium;
+        padding-right: Theme.padding-medium;
         spacing: 8px;
 
-        Rectangle {
+        // Ícone
+        Text {
+            text: file-info.is-directory ? "📁" : "📄";
+            font-size: 14px;
             width: 20px;
-            height: 20px;
-            background: file-info.is-directory ? #ffd700 : #87ceeb;
-            border-radius: 2px;
+            vertical-alignment: center;
+            horizontal-alignment: center;
         }
-        
-        // Name
+
+        // Nome
         Text {
             text: file-info.name;
             color: Theme.text-primary;
             font-size: Theme.font-medium;
             horizontal-alignment: left;
             vertical-alignment: center;
+            overflow: elide;
         }
 
-        // Size
+        // Tamanho
         Text {
             text: file-info.size;
             color: Theme.text-secondary;
@@ -65,14 +69,14 @@ export component FileItem inherits Rectangle {
             min-width: 80px;
         }
 
-        // Date
+        // Data
         Text {
             text: file-info.date;
             color: Theme.text-secondary;
             font-size: Theme.font-small;
             horizontal-alignment: right;
             vertical-alignment: center;
-            min-width: 120px;
+            min-width: 130px;
         }
     }
 }

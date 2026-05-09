@@ -9,61 +9,77 @@ export component FileList inherits Rectangle {
     callback file-clicked(int);
     callback file-double-click(int);
 
-    background: Theme.surface;
+    background: Theme.background;
 
     VerticalLayout {
         // Cabeçalho
-        header := Rectangle {
-            height: 28px;
-            background: Theme.background;
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 6px;
-        
+        Rectangle {
+            height: 30px;
+            background: Theme.surface;
+
+            // Linha inferior do header
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                width: parent.width;
+                background: Theme.border;
+            }
 
             HorizontalLayout {
-                padding: Theme.padding-small;
+                padding-left: Theme.padding-medium;
+                padding-right: Theme.padding-medium;
                 spacing: 8px;
 
                 Rectangle { width: 20px; }
 
                 Text {
                     text: "Nome";
-                    color: Theme.text-primary;
-                    font-size: Theme.font-medium;
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
                     horizontal-alignment: left;
+                    vertical-alignment: center;
                 }
 
                 Text {
-                        text: "Tamanho";
-                        color: Theme.text-primary;
-                        font-size: Theme.font-medium;
-                        horizontal-alignment: right;
-                        min-width: 80px;
-                    }
-                    
+                    text: "Tamanho";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                    min-width: 80px;
+                }
+
                 Text {
                     text: "Data Modificada";
-                    color: Theme.text-primary;
-                    font-size: Theme.font-medium;
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
                     horizontal-alignment: right;
-                    min-width: 120px;
+                    vertical-alignment: center;
+                    min-width: 130px;
                 }
             }
         }
+
         ScrollView {
+            vertical-stretch: 1;
+
             VerticalLayout {
                 for file[index] in files: FileItem {
                     file-info: file;
                     selected: index == selected-index;
+                    odd-row: mod(index, 2) == 1;
                     clicked => {
                         root.selected-index = index;
                         root.file-clicked(index);
                     }
                     double-clicked => {
-                        root.file-double-click(index)
+                        root.file-double-click(index);
                     }
                 }
             }
         }
-    }    
+    }
 }

@@ -4,34 +4,47 @@ export component StatusBar inherits Rectangle {
     in property <string> item-count: "0 itens";
     in property <string> selected-info: "";
     in property <string> disk-space: "";
-    
-    height: 24px;
-    background: Theme.background;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;    
+
+    height: 26px;
+    background: Theme.surface;
+
+    // Separador superior
+    Rectangle {
+        y: 0px;
+        height: 1px;
+        width: parent.width;
+        background: Theme.border;
+    }
+
     HorizontalLayout {
-        padding-left: Theme.padding-medium;
-        padding-right: Theme.padding-medium;
+        padding-left: Theme.padding-large;
+        padding-right: Theme.padding-large;
         spacing: 16px;
-        
+
         Text {
             text: item-count;
             color: Theme.text-secondary;
             font-size: Theme.font-small;
             vertical-alignment: center;
         }
-        
+
+        Rectangle {
+            width: 1px;
+            height: 14px;
+            background: Theme.border;
+            vertical-stretch: 0;
+        }
+
         Text {
-            text: selected-info;
+            text: selected-info != "" ? "Selecionado: " + selected-info : "";
             color: Theme.text-secondary;
             font-size: Theme.font-small;
             vertical-alignment: center;
+            overflow: elide;
         }
-        
-        Rectangle {
-            horizontal-stretch: 1;
-        }
-        
+
+        Rectangle { horizontal-stretch: 1; }
+
         Text {
             text: disk-space;
             color: Theme.text-secondary;

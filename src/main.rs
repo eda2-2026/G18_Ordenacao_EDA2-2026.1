@@ -1,127 +1,223 @@
-use std::path::Path;
-use slint::{ModelRc, VecModel, ComponentHandle, Model};
-use file_explorer_windows::core::file_metadata::{ClickResult, FileMetadata};
+use file_explorer_eda2::core::file_metadata::{ClickResult, FileMetadata};
+use slint::{ComponentHandle, Model, ModelRc, VecModel};
+use std::cell::RefCell;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 slint::include_modules!();
 
-fn map_to_slint(files: Vec<FileMetadata>)-> ModelRc<FileInfo> {
-    let slint_files: Vec<FileInfo> = files.into_iter().map(|f| {
-        let is_dir = f.is_dir();
-        let size_text = f.size_str(); 
-        let date_text = f.modified_str();
+fn map_to_slint(files: Vec<FileMetadata>) -> ModelRc<FileInfo> {
+    let slint_files: Vec<FileInfo> = files
+        .into_iter()
+        .map(|f: FileMetadata| {
+            let is_dir = f.is_dir();
+            let size = f.size_str();
+            let date = f.modified_str();
+            FileInfo {
+                name: f.name.into(),
+                path: f.path.to_string_lossy().to_string().into(),
+                size: size.into(),
+                date: date.into(),
+                is_directory: is_dir,
+            }
+        })
+        .collect();
+    ModelRc::new(VecModel::from(slint_files))
+}
 
-        FileInfo {
-            name: f.name.into(),      
-            path: f.path.to_string_lossy().to_string().into(), 
-            size: size_text.into(),   
-            date: date_text.into(),
-            is_directory: is_dir,     
+fn do_navigate(ui: &MainWindow, path: &Path) {
+    let items = FileMetadata::list_all_by_path(path);
+    ui.set_current_path(path.to_string_lossy().to_string().into());
+    ui.set_files(map_to_slint(items));
+    ui.set_selected_file_index(-1);
+}
+
+struct History {
+    entries: Vec<PathBuf>,
+    pos: usize,
+}
+
+impl History {
+    fn new(initial: PathBuf) -> Self {
+        Self { entries: vec![initial], pos: 0 }
+    }
+
+    fn push(&mut self, path: PathBuf) {
+        self.entries.truncate(self.pos + 1);
+        self.entries.push(path);
+        self.pos = self.entries.len() - 1;
+    }
+
+    fn go_back(&mut self) -> Option<PathBuf> {
+        if self.pos > 0 {
+            self.pos -= 1;
+            Some(self.entries[self.pos].clone())
+        } else {
+            None
         }
-    }).collect();
+    }
 
-    ModelRc::new(VecModel::from(slint_files))  
+    fn go_forward(&mut self) -> Option<PathBuf> {
+        if self.pos + 1 < self.entries.len() {
+            self.pos += 1;
+            Some(self.entries[self.pos].clone())
+        } else {
+            None
+        }
+    }
 }
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let ui_handle = ui.as_weak();
 
-    let root_path = "C:\\";
-    let initial_files = FileMetadata::list_all_by_path(Path::new(root_path));
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
+    let start_path = PathBuf::from(&home);
 
-    ui.set_current_path(root_path.into());
-    ui.set_files(map_to_slint(initial_files));
+    do_navigate(&ui, &start_path);
 
-    // Quando o usuário clica em um arquivo na lista
-    // 1. Apenas seleção (opcional, para atualizar status bar, etc)
+    // Locations com paths Linux reais
+    let locs: Vec<Location> = vec![
+        Location { name: "Home".into(), path: home.clone().into(), icon: "🏠".into() },
+        Location {
+            name: "Desktop".into(),
+            path: format!("{}/Desktop", home).into(),
+            icon: "🖥️".into(),
+        },
+        Location {
+            name: "Documentos".into(),
+            path: format!("{}/Documents", home).into(),
+            icon: "📄".into(),
+        },
+        Location {
+            name: "Downloads".into(),
+            path: format!("{}/Downloads", home).into(),
+            icon: "⬇️".into(),
+        },
+        Location {
+            name: "Imagens".into(),
+            path: format!("{}/Pictures", home).into(),
+            icon: "🖼️".into(),
+        },
+        Location { name: "Raiz".into(), path: "/".into(), icon: "💾".into() },
+    ];
+    ui.set_locations(ModelRc::new(VecModel::from(locs)));
+
+    let history = Rc::new(RefCell::new(History::new(start_path)));
+
     ui.on_file_selected({
         let ui_handle = ui_handle.clone();
         move |index| {
-            let ui = ui_handle.unwrap();
-            ui.set_selected_file_index(index);
+            ui_handle.unwrap().set_selected_file_index(index);
         }
     });
 
-    // 2. Abertura real (Acontece apenas no Double Click)
     ui.on_file_double_click({
         let ui_handle = ui_handle.clone();
+        let history = history.clone();
         move |index| {
             let ui = ui_handle.unwrap();
             if let Some(slint_file) = ui.get_files().row_data(index as usize) {
-                let path_buf = std::path::PathBuf::from(slint_file.path.as_str());
-                let node = FileMetadata::from_path(path_buf);
+                let path_buf = PathBuf::from(slint_file.path.as_str());
+                let node = FileMetadata::from_path(path_buf.clone());
 
                 match node.open() {
                     ClickResult::OpenedFolder(items) => {
-                        ui.set_current_path(node.path.to_string_lossy().to_string().into());
+                        history.borrow_mut().push(path_buf.clone());
+                        ui.set_current_path(
+                            path_buf.to_string_lossy().to_string().into(),
+                        );
                         ui.set_files(map_to_slint(items));
-                        ui.set_selected_file_index(-1); 
+                        ui.set_selected_file_index(-1);
+                        ui.set_selected_location_index(-1);
                     }
-                    ClickResult::OpenedFile => { /* Sistema abriu o arquivo */ }
-                    ClickResult::Error(e) => { eprintln!("Error: {}", e) }
+                    ClickResult::OpenedFile => {}
+                    ClickResult::Error(e) => eprintln!("Error: {}", e),
                 }
             }
         }
     });
 
-    // Quando o usuário clica no botão "Subir Nível" (Up)
     ui.on_navigate_up({
+        let ui_handle = ui_handle.clone();
+        let history = history.clone();
+        move || {
+            let ui = ui_handle.unwrap();
+            let current = PathBuf::from(ui.get_current_path().as_str());
+            if let Some(parent) = current.parent() {
+                let parent = parent.to_path_buf();
+                history.borrow_mut().push(parent.clone());
+                do_navigate(&ui, &parent);
+                ui.set_selected_location_index(-1);
+            }
+        }
+    });
+
+    ui.on_navigate_back({
+        let ui_handle = ui_handle.clone();
+        let history = history.clone();
+        move || {
+            let ui = ui_handle.unwrap();
+            if let Some(path) = history.borrow_mut().go_back() {
+                do_navigate(&ui, &path);
+                ui.set_selected_location_index(-1);
+            }
+        }
+    });
+
+    ui.on_navigate_forward({
+        let ui_handle = ui_handle.clone();
+        let history = history.clone();
+        move || {
+            let ui = ui_handle.unwrap();
+            if let Some(path) = history.borrow_mut().go_forward() {
+                do_navigate(&ui, &path);
+                ui.set_selected_location_index(-1);
+            }
+        }
+    });
+
+    // Disparado ao pressionar Enter na barra de endereço
+    ui.on_navigate_to({
+        let ui_handle = ui_handle.clone();
+        let history = history.clone();
+        move |path_str| {
+            let path = PathBuf::from(path_str.as_str());
+            if path.is_dir() {
+                let ui = ui_handle.unwrap();
+                history.borrow_mut().push(path.clone());
+                do_navigate(&ui, &path);
+                ui.set_selected_location_index(-1);
+            }
+        }
+    });
+
+    ui.on_refresh_files({
         let ui_handle = ui_handle.clone();
         move || {
             let ui = ui_handle.unwrap();
-            let current = std::path::PathBuf::from(ui.get_current_path().as_str());
-            
-            if let Some(parent) = current.parent() {
-                let items = FileMetadata::list_all_by_path(parent);
-                ui.set_current_path(parent.to_string_lossy().to_string().into());
-                ui.set_files(map_to_slint(items));
+            let current = PathBuf::from(ui.get_current_path().as_str());
+            let items = FileMetadata::list_all_by_path(&current);
+            ui.set_files(map_to_slint(items));
+            ui.set_selected_file_index(-1);
+        }
+    });
+
+    ui.on_location_selected({
+        let ui_handle = ui_handle.clone();
+        let history = history.clone();
+        move |index| {
+            let ui = ui_handle.unwrap();
+            if let Some(loc) = ui.get_locations().row_data(index as usize) {
+                let path = PathBuf::from(loc.path.as_str());
+                if path.is_dir() {
+                    history.borrow_mut().push(path.clone());
+                    do_navigate(&ui, &path);
+                    ui.set_selected_location_index(index);
+                }
             }
         }
     });
 
     ui.run()
 }
-
-
-
-
-
-
-
-
-// let mut start_path = String::from("C:\\Users");
-// let mut list = FileMetadata::list_all_by_path(Path::new(&start_path));
-
-// loop {
-//     println!("PASTA ATUAL: {}", start_path);
-
-//     for (i, item) in list.iter().enumerate() {
-//         let prefixo = if item.is_dir() { "[DIR]" } else { "[FILE]" };
-//         println!("{}: {} {}", i, prefixo, item.name);
-//     }
-
-//     print!("\nDigite o número para abrir (ou 'q' para sair): ");
-//     io::stdout().flush().unwrap();
-
-//     let mut input = String::new();
-//     io::stdin().read_line(&mut input).unwrap();
-//     let input = input.trim();
-
-//     if input == "q" {break;}
-
-//     if let Ok(idx) = input.parse::<usize>() {
-//         if let Some(escolhido) = list.get(idx) {
-//             match escolhido.open() {
-//                 ClickResult::OpenedFolder(new_items) => {
-//                     start_path = escolhido.path.to_string_lossy().to_string();
-//                     println!("Entrando em...");
-//                     list = new_items;
-//                 },
-//                 ClickResult::OpenedFile => println!("Arquivo aberto no Windows. Continuando na mesma pasta..."),
-//                 ClickResult::Error(e) => eprintln!("Erro ao abrir: {}", e),
-//             }
-//         }
-//     } else {
-//         println!("Invalid Entry");
-//     }
-// }
