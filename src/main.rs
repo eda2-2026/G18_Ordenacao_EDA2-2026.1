@@ -71,35 +71,39 @@ fn main() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let ui_handle = ui.as_weak();
 
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| if cfg!(windows) { "C:\\".to_string() } else { "/".to_string() });
     let start_path = PathBuf::from(&home);
 
     do_navigate(&ui, &start_path);
 
-    // Locations com paths Linux reais
+    let raiz_path = if cfg!(windows) { "C:\\" } else { "/" };
+
+    // Locations com paths reais
     let locs: Vec<Location> = vec![
         Location { name: "Home".into(), path: home.clone().into(), icon: "🏠".into() },
         Location {
             name: "Desktop".into(),
-            path: format!("{}/Desktop", home).into(),
+            path: Path::new(&home).join("Desktop").to_string_lossy().to_string().into(),
             icon: "🖥️".into(),
         },
         Location {
             name: "Documentos".into(),
-            path: format!("{}/Documents", home).into(),
+            path: Path::new(&home).join("Documents").to_string_lossy().to_string().into(),
             icon: "📄".into(),
         },
         Location {
             name: "Downloads".into(),
-            path: format!("{}/Downloads", home).into(),
+            path: Path::new(&home).join("Downloads").to_string_lossy().to_string().into(),
             icon: "⬇️".into(),
         },
         Location {
             name: "Imagens".into(),
-            path: format!("{}/Pictures", home).into(),
+            path: Path::new(&home).join("Pictures").to_string_lossy().to_string().into(),
             icon: "🖼️".into(),
         },
-        Location { name: "Raiz".into(), path: "/".into(), icon: "💾".into() },
+        Location { name: "Raiz".into(), path: raiz_path.into(), icon: "💾".into() },
     ];
     ui.set_locations(ModelRc::new(VecModel::from(locs)));
 
