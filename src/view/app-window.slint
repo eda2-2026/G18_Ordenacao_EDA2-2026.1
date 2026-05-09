@@ -8,20 +8,14 @@ import { Theme } from "./styles/theme.slint";
 export component MainWindow inherits Window {
     title: "Rusty Explorer";
     min-width: 800px;
-    min-height: 600px;
+    min-height: 500px;
+    preferred-width: 1100px;
+    preferred-height: 700px;
     background: Theme.background;
 
-    preferred-width: 1024px;
-    preferred-height: 768px;
-
-    in-out property <string> current-path: "C:\\";
+    in-out property <string> current-path: "/";
     in-out property <[FileInfo]> files: [];
-    in-out property <[Location]> locations: [
-        { name: "Desktop", path: "C:\\Users\\Desktop", icon: "🖥️" },
-        { name: "Documentos", path: "C:\\Users\\Documents", icon: "📄" },
-        { name: "Downloads", path: "C:\\Users\\Downloads", icon: "⬇️" },
-        { name: "Imagens", path: "C:\\Users\\Pictures", icon: "🖼️" },
-    ];
+    in-out property <[Location]> locations: [];
     in-out property <int> selected-file-index: -1;
     in-out property <int> selected-location-index: -1;
 
@@ -35,6 +29,8 @@ export component MainWindow inherits Window {
     callback file-double-click(int);
 
     HorizontalLayout {
+        spacing: 0px;
+
         sidebar := Sidebar {
             locations: root.locations;
             selected-index: root.selected-location-index;
@@ -42,8 +38,10 @@ export component MainWindow inherits Window {
                 root.location-selected(index);
             }
         }
-        
+
         VerticalLayout {
+            spacing: 0px;
+
             toolbar := Toolbar {
                 current-path <=> root.current-path;
                 navigate-back => { root.navigate-back(); }
@@ -52,27 +50,26 @@ export component MainWindow inherits Window {
                 path-changed => { root.navigate-to(root.current-path); }
                 refresh => { root.refresh-files(); }
             }
-            
+
             file-list := FileList {
+                vertical-stretch: 1;
                 files: root.files;
                 selected-index: root.selected-file-index;
 
                 file-double-click(index) => {
                     root.file-double-click(index);
                 }
-                
                 file-clicked(index) => {
                     root.file-selected(index);
                 }
             }
-            
+
             statusbar := StatusBar {
                 item-count: root.files.length + " itens";
-                selected-info: root.selected-file-index >= 0 ? 
+                selected-info: root.selected-file-index >= 0 ?
                               root.files[root.selected-file-index].name : "";
-                disk-space: "Espaço disponível: 250 GB";
+                disk-space: "";
             }
         }
     }
-    
 }
