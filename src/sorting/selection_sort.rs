@@ -6,8 +6,9 @@ use std::cmp::Ordering;
 pub struct SelectionSort;
 
 impl Sorter for SelectionSort {
-    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> usize {
+    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> (usize, usize) {
         let mut comparisons = 0;
+        let mut swaps = 0;
         let n = files.len();
         for i in 0..n {
             let mut min = i;
@@ -19,8 +20,9 @@ impl Sorter for SelectionSort {
             }
             if min != i {
                 files.swap(i, min);
+                swaps += 1;
             }
         }
-        comparisons
+        (comparisons, swaps)
     }
 }

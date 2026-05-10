@@ -6,17 +6,19 @@ use std::cmp::Ordering;
 pub struct BubbleSort;
 
 impl Sorter for BubbleSort {
-    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> usize {
+    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> (usize, usize) {
         let mut comparisons = 0;
+        let mut swaps = 0;
         let n = files.len();
         for i in 0..n {
             for j in 0..n.saturating_sub(1 + i) {
                 comparisons += 1;
                 if compare_files(&files[j], &files[j + 1], criteria) == Ordering::Greater {
                     files.swap(j, j + 1);
+                    swaps += 1;
                 }
             }
         }
-        comparisons
+        (comparisons, swaps)
     }
 }

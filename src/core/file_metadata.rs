@@ -174,4 +174,12 @@ impl FileMetadata {
             EntryType::Dir { .. } => String::new(),
         }
     }
+
+    pub fn new_mock_for_test(name: String, size: u64) -> Self {
+        Self {
+            name,
+            path: std::path::PathBuf::from("/mock"),
+            kind: EntryType::File { size, extension: "txt".to_string() },
+        }
+    }
 }
