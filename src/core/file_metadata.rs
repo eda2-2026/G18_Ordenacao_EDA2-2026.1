@@ -28,6 +28,8 @@ pub struct FileMetadata {
     pub name: String,
     pub path: PathBuf,
     kind: EntryType,
+    #[serde(default)]
+    modified_at: Option<u64>,
 }
 
 impl FileMetadata {
@@ -51,7 +53,7 @@ impl FileMetadata {
             EntryType::File { size, extension }
         };
 
-        FileMetadata { name, path, kind }
+        FileMetadata { name, path, kind, modified_at: None }
     }
 
     // Contrutor do FileMetadata
@@ -74,7 +76,7 @@ impl FileMetadata {
             EntryType::File { size, extension }
         };
 
-        FileMetadata { name, path, kind }
+        FileMetadata { name, path, kind, modified_at: None }
     }
 
     pub fn is_hidden(entry: &DirEntry) -> bool {
@@ -157,6 +159,9 @@ impl FileMetadata {
     }
 
     pub fn raw_modified(&self) -> u64 {
+        if let Some(ts) = self.modified_at {
+            return ts;
+        }
         let metadata = std::fs::metadata(&self.path);
         if let Ok(m) = metadata {
             if let Ok(time) = m.modified() {
@@ -180,6 +185,16 @@ impl FileMetadata {
             name,
             path: std::path::PathBuf::from("/mock"),
             kind: EntryType::File { size, extension: "txt".to_string() },
+            modified_at: None,
+        }
+    }
+
+    pub fn new_mock_with_date(name: String, size: u64, modified_at: u64) -> Self {
+        Self {
+            name,
+            path: std::path::PathBuf::from("/mock"),
+            kind: EntryType::File { size, extension: "txt".to_string() },
+            modified_at: Some(modified_at),
         }
     }
 }
