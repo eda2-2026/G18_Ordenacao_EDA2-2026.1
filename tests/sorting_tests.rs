@@ -8,26 +8,14 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
-<<<<<<< HEAD
     let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
-    let temp_dir = std::env::temp_dir().join(format!(
-        "eda2_tests_{}_{}",
-        std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_nanos(),
-        thread_id,
-    ));
-=======
-<<<<<<< HEAD
->>>>>>> 6018e0a (feat: implement file sorting algorithms and integrate directory navigation into the UI)
     let count = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let temp_dir = std::env::temp_dir().join(format!("eda2_sort_tests_{}_{}", std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_millis(), count));
-=======
-    let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
     let temp_dir = std::env::temp_dir().join(format!(
-        "eda2_tests_{}_{}",
+        "eda2_sort_tests_{}_{}_{}",
         std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_nanos(),
         thread_id,
+        count
     ));
->>>>>>> 0410f49 (feat: implement file sorting algorithms and integrate directory navigation into the UI)
     std::fs::create_dir_all(&temp_dir).unwrap();
 
     // 1. A dir "Z_Dir"

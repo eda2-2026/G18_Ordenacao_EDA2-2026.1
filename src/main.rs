@@ -3,6 +3,7 @@ use file_explorer_eda2::sorting::{
     SortCriteria, Sorter,
     heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort
 };
+use file_explorer_eda2::search::{Searcher, linear_search::LinearSearch};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
@@ -53,9 +54,19 @@ fn do_navigate(ui: &MainWindow, path: &Path) {
     let criteria = get_criteria_from_index(ui.get_sort_index());
 
     QuickSort::sort(&mut items, criteria);
-
+  
+    // Ordem crescente/decrescente
     if !ui.get_sort_ascending() {
         items.reverse();
+    }
+
+
+    let query = ui.get_search_query();
+    let query_str = query.as_str();
+    if !query_str.trim().is_empty() {
+        let (indices, comps) = LinearSearch::search(&items, query_str);
+        items = indices.into_iter().map(|i| items[i].clone()).collect();
+        println!("do_navigate: Busca por '{}' resultou em {} itens ({} comparações)", query_str, items.len(), comps);
     }
 
     ui.set_current_path(path.to_string_lossy().to_string().into());
@@ -258,6 +269,35 @@ fn main() -> Result<(), slint::PlatformError> {
             println!("- MergeSort comparou {} vezes", comps_merge);
             println!("- HeapSort comparou  {} vezes", comps_heap);
             println!("--------------------------------------------------");
+
+            let query = ui.get_search_query();
+            let query_str = query.as_str();
+            if !query_str.trim().is_empty() {
+                let (indices, comps) = LinearSearch::search(&items, query_str);
+                items = indices.into_iter().map(|i| items[i].clone()).collect();
+                println!("sort_changed: Busca por '{}' resultou em {} itens ({} comparações)", query_str, items.len(), comps);
+            }
+
+            ui.set_files(map_to_slint(items));
+            ui.set_selected_file_index(-1);
+        }
+    });
+
+    ui.on_search_changed({
+        let ui_handle = ui_handle.clone();
+        move |query| {
+            let ui = ui_handle.unwrap();
+            let current = PathBuf::from(ui.get_current_path().as_str());
+            let mut items = FileMetadata::list_all_by_path(&current);
+            let criteria = get_criteria_from_index(ui.get_sort_index());
+            QuickSort::sort(&mut items, criteria);
+            
+            let query_str = query.as_str();
+            if !query_str.trim().is_empty() {
+                let (indices, comps) = LinearSearch::search(&items, query_str);
+                println!("search_changed: Busca por '{}' resultou em {} itens ({} comparações)", query_str, indices.len(), comps);
+                items = indices.into_iter().map(|i| items[i].clone()).collect();
+            }
 
             ui.set_files(map_to_slint(items));
             ui.set_selected_file_index(-1);
