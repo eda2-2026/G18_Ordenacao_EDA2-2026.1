@@ -1,10 +1,24 @@
 use file_explorer_eda2::core::file_metadata::{ClickResult, FileMetadata};
+use file_explorer_eda2::sorting::{
+    SortCriteria, Sorter,
+    heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort
+};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 slint::include_modules!();
+
+fn get_criteria_from_index(index: i32) -> SortCriteria {
+    match index {
+        0 => SortCriteria::Nome,
+        1 => SortCriteria::Tamanho,
+        2 => SortCriteria::Data,
+        3 => SortCriteria::Tipo,
+        _ => SortCriteria::Nome,
+    }
+}
 
 fn map_to_slint(files: Vec<FileMetadata>) -> ModelRc<FileInfo> {
     let slint_files: Vec<FileInfo> = files
@@ -26,7 +40,11 @@ fn map_to_slint(files: Vec<FileMetadata>) -> ModelRc<FileInfo> {
 }
 
 fn do_navigate(ui: &MainWindow, path: &Path) {
-    let items = FileMetadata::list_all_by_path(path);
+    let mut items = FileMetadata::list_all_by_path(path);
+    let criteria = get_criteria_from_index(ui.get_sort_index());
+    
+    QuickSort::sort(&mut items, criteria);
+
     ui.set_current_path(path.to_string_lossy().to_string().into());
     ui.set_files(map_to_slint(items));
     ui.set_selected_file_index(-1);
@@ -201,7 +219,33 @@ fn main() -> Result<(), slint::PlatformError> {
         move || {
             let ui = ui_handle.unwrap();
             let current = PathBuf::from(ui.get_current_path().as_str());
-            let items = FileMetadata::list_all_by_path(&current);
+            do_navigate(&ui, &current);
+        }
+    });
+
+    ui.on_sort_changed({
+        let ui_handle = ui_handle.clone();
+        move |index| {
+            let ui = ui_handle.unwrap();
+            let current = PathBuf::from(ui.get_current_path().as_str());
+            let mut items = FileMetadata::list_all_by_path(&current);
+            let criteria = get_criteria_from_index(index);
+            
+            // Just for demonstration and academic comparison:
+            let mut items_merge = items.clone();
+            let mut items_heap = items.clone();
+            
+            let comps_quick = QuickSort::sort(&mut items, criteria);
+            let comps_merge = MergeSort::sort(&mut items_merge, criteria);
+            let comps_heap = HeapSort::sort(&mut items_heap, criteria);
+            
+            println!("--------------------------------------------------");
+            println!("Ordenação por índice de critério {:?}:", index);
+            println!("- QuickSort comparou {} vezes", comps_quick);
+            println!("- MergeSort comparou {} vezes", comps_merge);
+            println!("- HeapSort comparou  {} vezes", comps_heap);
+            println!("--------------------------------------------------");
+
             ui.set_files(map_to_slint(items));
             ui.set_selected_file_index(-1);
         }

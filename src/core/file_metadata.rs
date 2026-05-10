@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 enum EntryType {
     File { size: u64, extension: String },
     Dir  { child_count: usize },
@@ -23,7 +23,7 @@ pub enum ClickResult {
     Error(String),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FileMetadata {
     pub name: String,
     pub path: PathBuf,
@@ -146,6 +146,32 @@ impl FileMetadata {
                 else {format!("{:.1} MB", size as f64 / 1048576.0)}
             },
             EntryType::Dir { .. } => String::from("<DIR>")
+        }
+    }
+
+    pub fn raw_size(&self) -> u64 {
+        match self.kind {
+            EntryType::File { size, .. } => size,
+            EntryType::Dir { .. } => 0,
+        }
+    }
+
+    pub fn raw_modified(&self) -> u64 {
+        let metadata = std::fs::metadata(&self.path);
+        if let Ok(m) = metadata {
+            if let Ok(time) = m.modified() {
+                if let Ok(dur) = time.duration_since(SystemTime::UNIX_EPOCH) {
+                    return dur.as_secs();
+                }
+            }
+        }
+        0
+    }
+
+    pub fn extension(&self) -> String {
+        match &self.kind {
+            EntryType::File { extension, .. } => extension.clone(),
+            EntryType::Dir { .. } => String::new(),
         }
     }
 }

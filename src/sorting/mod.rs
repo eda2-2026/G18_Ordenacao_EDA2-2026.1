@@ -1,12 +1,6 @@
-use crate::core::file_metadata::FileMetadata;
+pub mod common;
+pub mod heap_sort;
+pub mod merge_sort;
+pub mod quick_sort;
 
-pub enum SortCriteria {
-    Nome,
-    Tamanho,
-    Data,
-    Tipo,
-}
-
-pub trait Sorter {
-    fn sort(files: &mut Vec<FileMetadata>);
-}
+pub use common::*;
