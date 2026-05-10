@@ -22,20 +22,52 @@ Após a implementação dos algoritmos, consolidamos um relatório prático foca
 
 ```
 src/
-├── main.rs               # Entrada da aplicação
-├── lib.rs
+├── main.rs                    # Entrada da aplicação (UI + callbacks)
+├── lib.rs                     # Re-exports públicos da lib
+│
 ├── core/
-│   └── file_metadata.rs  # Modelo de dados de arquivo
-├── view/                 # UI Slint (frontend)
-│   ├── app-window.slint
-│   ├── componets/
-│   │   ├── file-item.slint
-│   │   ├── file-list.slint
-│   │   ├── sidebar.slint
-│   │   ├── statusbar.slint
-│   │   └── toolbar.slint
-│   └── styles/
-│       └── theme.slint
+│   └── file_metadata.rs       # Modelo de dados de arquivo/diretório
+│
+├── sorting/                   # Módulo de algoritmos de ordenação
+│   ├── mod.rs                 # Re-exports + documentação acadêmica
+│   ├── common.rs              # Trait Sorter + SortCriteria + compare_files
+│   ├── bubble_sort.rs         # Bubble Sort   — O(n²)
+│   ├── selection_sort.rs      # Selection Sort — O(n²), O(n) trocas
+│   ├── insertion_sort.rs      # Insertion Sort — O(n²), O(n) quasi-sorted
+│   ├── quick_sort.rs          # Quick Sort    — O(n log n) médio, in-place
+│   ├── merge_sort.rs          # Merge Sort    — O(n log n) estável
+│   ├── heap_sort.rs           # Heap Sort     — O(n log n) garantido, O(1) memória
+│   └── counting_sort.rs       # Counting Sort — O(n+k), não-comparativo (Tipo)
+│
+├── search/                    # Módulo de algoritmos de busca
+│   ├── mod.rs                 # Re-exports + trait Searcher
+│   ├── common.rs              # Tipos compartilhados de busca
+│   ├── linear_search.rs       # Busca Linear  — O(n)
+│   ├── binary_search.rs       # Busca Binária — O(log n)
+│   └── recursive_search.rs    # Busca Recursiva em subpastas — WalkDir
+│
+├── benchmark/
+│   └── mod.rs                 # Suíte de benchmarks (sort + busca + estabilidade)
+│
+├── bin/
+│   └── synthesis.rs           # Binário de síntese acadêmica → gera ANALISE_ALGORITMOS.md
+│
+└── view/                      # UI Slint (frontend)
+    ├── app-window.slint        # Janela principal + painel de métricas
+    ├── componets/
+    │   ├── file-item.slint     # Item individual da lista de arquivos
+    │   ├── file-list.slint     # Lista de arquivos
+    │   ├── sidebar.slint       # Painel lateral (favoritos/locais)
+    │   ├── statusbar.slint     # Barra de status (métricas de sort/busca)
+    │   └── toolbar.slint       # Toolbar (critério de ordenação + campo de busca)
+    └── styles/
+        └── theme.slint         # Design system / tokens de cor e tipografia
+
+tests/
+├── sorting_tests.rs            # Testes de ordenação + benchmarks de validação
+└── search_tests.rs             # Testes de busca linear, binária e recursiva
+
+ANALISE_ALGORITMOS.md           # Relatório gerado automaticamente pelo bin/synthesis
 ```
 
 ## Setup
@@ -50,5 +82,6 @@ cargo run
 
 | Membro | GitHub |
 |--------|--------|
-| ... | ... |
-| ... | ... |
+| Heitor Macedo | [HeitorM50](https://github.com/HeitorM50) |
+| Lucas Zanetti | [Bappoz](https://github.com/Bappoz) |
+
