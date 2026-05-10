@@ -20,6 +20,15 @@ fn get_criteria_from_index(index: i32) -> SortCriteria {
     }
 }
 
+fn get_criteria_from_str(s: &str) -> SortCriteria {
+    match s {
+        "Tamanho" => SortCriteria::Tamanho,
+        "Data"    => SortCriteria::Data,
+        "Tipo"    => SortCriteria::Tipo,
+        _         => SortCriteria::Nome,
+    }
+}
+
 fn map_to_slint(files: Vec<FileMetadata>) -> ModelRc<FileInfo> {
     let slint_files: Vec<FileInfo> = files
         .into_iter()
@@ -42,8 +51,12 @@ fn map_to_slint(files: Vec<FileMetadata>) -> ModelRc<FileInfo> {
 fn do_navigate(ui: &MainWindow, path: &Path) {
     let mut items = FileMetadata::list_all_by_path(path);
     let criteria = get_criteria_from_index(ui.get_sort_index());
-    
+
     QuickSort::sort(&mut items, criteria);
+
+    if !ui.get_sort_ascending() {
+        items.reverse();
+    }
 
     ui.set_current_path(path.to_string_lossy().to_string().into());
     ui.set_files(map_to_slint(items));
@@ -144,13 +157,9 @@ fn main() -> Result<(), slint::PlatformError> {
                 let node = FileMetadata::from_path(path_buf.clone());
 
                 match node.open() {
-                    ClickResult::OpenedFolder(items) => {
+                    ClickResult::OpenedFolder(_) => {
                         history.borrow_mut().push(path_buf.clone());
-                        ui.set_current_path(
-                            path_buf.to_string_lossy().to_string().into(),
-                        );
-                        ui.set_files(map_to_slint(items));
-                        ui.set_selected_file_index(-1);
+                        do_navigate(&ui, &path_buf);
                         ui.set_selected_location_index(-1);
                     }
                     ClickResult::OpenedFile => {}
@@ -223,24 +232,28 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
-    ui.on_sort_changed({
+    ui.on_sort_requested({
         let ui_handle = ui_handle.clone();
-        move |index| {
+        move |criterion| {
             let ui = ui_handle.unwrap();
+            let ascending = ui.get_sort_ascending();
             let current = PathBuf::from(ui.get_current_path().as_str());
             let mut items = FileMetadata::list_all_by_path(&current);
-            let criteria = get_criteria_from_index(index);
-            
-            // Just for demonstration and academic comparison:
+            let criteria = get_criteria_from_str(criterion.as_str());
+
             let mut items_merge = items.clone();
             let mut items_heap = items.clone();
-            
+
             let comps_quick = QuickSort::sort(&mut items, criteria);
             let comps_merge = MergeSort::sort(&mut items_merge, criteria);
             let comps_heap = HeapSort::sort(&mut items_heap, criteria);
-            
+
+            if !ascending {
+                items.reverse();
+            }
+
             println!("--------------------------------------------------");
-            println!("Ordenação por índice de critério {:?}:", index);
+            println!("Ordenação: {} {}", criterion, if ascending { "↑" } else { "↓" });
             println!("- QuickSort comparou {} vezes", comps_quick);
             println!("- MergeSort comparou {} vezes", comps_merge);
             println!("- HeapSort comparou  {} vezes", comps_heap);

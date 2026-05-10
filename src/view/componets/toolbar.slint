@@ -29,6 +29,7 @@ export component Toolbar inherits Rectangle {
     in-out property <string> current-path: "/";
     in-out property <string> search-query: "";
     in-out property <int> sort-index: 0;
+    in-out property <bool> sort-ascending: true;
 
     callback navigate-forward();
     callback navigate-back();
@@ -135,6 +136,35 @@ export component Toolbar inherits Rectangle {
             current-index <=> root.sort-index;
             selected => {
                 root.sort-changed();
+            }
+        }
+
+        Rectangle { width: 4px; }
+
+        // Toggle crescente / decrescente
+        Rectangle {
+            width: 30px;
+            height: 30px;
+            border-radius: Theme.border-radius;
+            border-width: 1px;
+            border-color: Theme.border;
+            background: dir-touch.pressed ? Theme.selected :
+                        dir-touch.has-hover ? Theme.surface-hover :
+                        transparent;
+
+            dir-touch := TouchArea {
+                clicked => {
+                    root.sort-ascending = !root.sort-ascending;
+                    root.sort-changed();
+                }
+            }
+
+            Text {
+                text: root.sort-ascending ? "↑" : "↓";
+                color: Theme.text-primary;
+                font-size: 16px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
             }
         }
     }
