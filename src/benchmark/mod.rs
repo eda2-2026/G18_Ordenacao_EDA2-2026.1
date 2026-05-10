@@ -88,7 +88,7 @@ pub fn run_sort_benchmarks(files: &[FileMetadata], criteria: SortCriteria) -> Ve
 pub fn run_type_cardinality_benchmark() -> Vec<BenchmarkResult> {
     let extensions = ["txt", "png", "rs", "toml", "md", "jpg", "pdf", "docx"];
     let n = 10_000;
-    let mut files: Vec<FileMetadata> = (0..n)
+    let files: Vec<FileMetadata> = (0..n)
         .map(|i| {
             if i % 10 == 0 {
                 // Diretório
