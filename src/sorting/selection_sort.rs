@@ -1,15 +1,19 @@
 use crate::core::file_metadata::FileMetadata;
 use super::Sorter;
+use super::common::{compare_files, SortCriteria};
+use std::cmp::Ordering;
 
 pub struct SelectionSort;
 
 impl Sorter for SelectionSort {
-    fn sort(files: &mut Vec<FileMetadata>) {
+    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> usize {
+        let mut comparisons = 0;
         let n = files.len();
         for i in 0..n {
             let mut min = i;
             for j in i + 1..n {
-                if files[j].name < files[min].name {
+                comparisons += 1;
+                if compare_files(&files[j], &files[min], criteria) == Ordering::Less {
                     min = j;
                 }
             }
@@ -17,5 +21,6 @@ impl Sorter for SelectionSort {
                 files.swap(i, min);
             }
         }
+        comparisons
     }
 }
