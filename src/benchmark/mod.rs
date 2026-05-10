@@ -161,6 +161,119 @@ pub fn run_nearly_sorted_name_benchmark() -> Vec<BenchmarkResult> {
     results
 }
 
+/// Cria N arquivos mock com timestamps interleaved: ~`tie_fraction` deles compartilham o mesmo
+/// timestamp (`TIE_TS`), o restante tem timestamps únicos crescentes. O padrão intercalado
+/// desafia o Quick Sort a expor instabilidade nos grupos de empate.
+fn make_with_repeated_timestamps(n: usize, tie_fraction: f64) -> Vec<FileMetadata> {
+    const TIE_TS: u64 = 1_000_000;
+    // period=3 para ~33% de empates (suficiente para demonstrar 30%)
+    let period = (1.0_f64 / tie_fraction).round().max(2.0) as usize;
+    let mut uniq_ts = TIE_TS + 1;
+    let mut tie_idx = 0usize;
+
+    (0..n)
+        .map(|i| {
+            if i % period == 0 {
+                let f = FileMetadata::new_mock_with_date(
+                    format!("tie_{:06}", tie_idx),
+                    1024,
+                    TIE_TS,
+                );
+                tie_idx += 1;
+                f
+            } else {
+                let f = FileMetadata::new_mock_with_date(
+                    format!("uniq_{:06}", uniq_ts - TIE_TS - 1),
+                    1024,
+                    uniq_ts,
+                );
+                uniq_ts += 1;
+                f
+            }
+        })
+        .collect()
+}
+
+/// Verifica se `sorted` é uma ordenação estável de `original` por `raw_modified()`.
+///
+/// Para cada grupo de arquivos com o mesmo timestamp em `sorted`, checa se a ordem
+/// relativa entre eles corresponde à sua posição em `original`. Retorna `false` se
+/// alguma inversão for detectada.
+pub fn verify_sort_stability(original: &[FileMetadata], sorted: &[FileMetadata]) -> bool {
+    let orig_pos: std::collections::HashMap<&str, usize> = original
+        .iter()
+        .enumerate()
+        .map(|(i, f)| (f.name.as_str(), i))
+        .collect();
+
+    let n = sorted.len();
+    let mut i = 0;
+    while i < n {
+        let ts = sorted[i].raw_modified();
+        let mut j = i + 1;
+        while j < n && sorted[j].raw_modified() == ts {
+            j += 1;
+        }
+        // grupo sorted[i..j] compartilha o mesmo timestamp — verifica ordem relativa
+        if j > i + 1 {
+            let positions: Vec<usize> = sorted[i..j]
+                .iter()
+                .map(|f| orig_pos[f.name.as_str()])
+                .collect();
+            if positions.windows(2).any(|w| w[0] >= w[1]) {
+                return false;
+            }
+        }
+        i = j;
+    }
+    true
+}
+
+/// Benchmark de estabilidade para `SortCriteria::Data` com 30% de arquivos com timestamp idêntico.
+///
+/// Para cada N em [100, 1_000, 10_000], cria um dataset interleaved onde ~30% dos arquivos
+/// compartilham o mesmo timestamp e executa Quick Sort, Merge Sort e Insertion Sort.
+/// Imprime no stdout se cada algoritmo preservou a ordem relativa dos empates.
+pub fn run_stability_date_benchmark() -> Vec<BenchmarkResult> {
+    let sizes = [100usize, 1_000, 10_000];
+    const TIE_FRACTION: f64 = 0.30;
+    let mut results = Vec::new();
+
+    for &n in &sizes {
+        let original = make_with_repeated_timestamps(n, TIE_FRACTION);
+        let kind = format!("stability_date_30pct_ties_n{n}");
+
+        let mut qs = original.clone();
+        let t = Instant::now();
+        let (qs_comps, qs_swaps) = QuickSort::sort(&mut qs, SortCriteria::Data);
+        let qs_ms = t.elapsed().as_secs_f64() * 1000.0;
+        let qs_stable = verify_sort_stability(&original, &qs);
+
+        let mut ms = original.clone();
+        let t = Instant::now();
+        let (ms_comps, ms_swaps) = MergeSort::sort(&mut ms, SortCriteria::Data);
+        let ms_ms = t.elapsed().as_secs_f64() * 1000.0;
+        let ms_stable = verify_sort_stability(&original, &ms);
+
+        let mut is = original.clone();
+        let t = Instant::now();
+        let (is_comps, is_swaps) = InsertionSort::sort(&mut is, SortCriteria::Data);
+        let is_ms = t.elapsed().as_secs_f64() * 1000.0;
+        let is_stable = verify_sort_stability(&original, &is);
+
+        println!("=== Stability Date Benchmark (n={n}, ~30% ties) ===");
+        println!("  QuickSort:     {qs_ms:.4}ms, {qs_comps} comps, {qs_swaps} swaps — estavel={qs_stable}");
+        println!("  MergeSort:     {ms_ms:.4}ms, {ms_comps} comps, {ms_swaps} swaps — estavel={ms_stable}");
+        println!("  InsertionSort: {is_ms:.4}ms, {is_comps} comps, {is_swaps} swaps — estavel={is_stable}");
+
+        results.push(BenchmarkResult { algorithm: "QuickSort".into(),     kind: kind.clone(), duration_ms: qs_ms, comparisons: qs_comps, swaps: qs_swaps });
+        results.push(BenchmarkResult { algorithm: "MergeSort".into(),     kind: kind.clone(), duration_ms: ms_ms, comparisons: ms_comps, swaps: ms_swaps });
+        results.push(BenchmarkResult { algorithm: "InsertionSort".into(), kind: kind.clone(), duration_ms: is_ms, comparisons: is_comps, swaps: is_swaps });
+    }
+
+    results
+}
+
 pub fn run_search_benchmarks(files: &[FileMetadata], query: &str) -> Vec<BenchmarkResult> {
     let mut sorted = files.to_vec();
     sorted.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));

@@ -75,6 +75,37 @@ A estratégia para `SortCriteria::Tipo` é:
 3. Isso exige uma varredura para contar e outra para distribuir, resultando em um tempo real de **$O(n + k)$**.
 
 Para 10.000 itens (com apenas 20 extensões diferentes), o Counting Sort supera imensamente o Merge/Quick Sort, demonstrando que explorar a estrutura semântica dos dados permite escolhas algorítmicas muito mais precisas.
+## Análise de Algoritmos para Datas (`SortCriteria::Data`)
+
+A ordenação por data de modificação (timestamp `u64`) tem uma característica especial: **múltiplos arquivos podem compartilhar o mesmo timestamp** — por exemplo, arquivos extraídos de um `.zip` ou criados em lote por uma operação de sistema. Isso torna a **estabilidade** do algoritmo observável pelo usuário.
+
+### Por que estabilidade importa aqui
+
+Quando dois arquivos têm exatamente o mesmo timestamp, a ordem relativa entre eles é determinada pela posição original na listagem do diretório. Um algoritmo **estável** preserva essa ordem; um algoritmo **instável** pode invertê-la arbitrariamente.
+
+Isso é o conceito de **ordenação multi-critério por composição estável**: se o usuário ordena por data e em seguida por nome *sem perder a ordem de data*, apenas um algoritmo estável entrega o resultado correto.
+
+### Tabela comparativa
+
+| Algoritmo      | Estável? | Comportamento com timestamps repetidos              |
+|----------------|----------|-----------------------------------------------------|
+| Merge Sort     | ✅        | Mantém ordem original entre arquivos com mesma data |
+| Insertion Sort | ✅        | Idem — e eficiente se datas já quase-ordenadas      |
+| Bubble Sort    | ✅        | Estável, mas O(n²) — apenas didático                |
+| Quick Sort     | ❌        | Pode inverter a ordem de arquivos com mesma data    |
+| Heap Sort      | ❌        | Idem — instável por design                          |
+
+### Recomendação para `SortCriteria::Data`
+
+**O Merge Sort é o algoritmo preferido para ordenação por data.**
+
+Garante $O(n \log n)$ no pior caso, mantém estabilidade e é robusto para qualquer distribuição
+de timestamps — incluindo o cenário onde 30%+ dos arquivos compartilham o mesmo timestamp.
+
+**Hipótese verificada por benchmark** (`run_stability_date_benchmark`):
+Com 30% de arquivos compartilhando o mesmo timestamp (interleaved), o Quick Sort pode inverter
+a ordem relativa dentro do grupo de empate, enquanto o Merge Sort e o Insertion Sort preservam
+a ordem original verificável por `verify_sort_stability`.
 */
 
 pub mod common;
