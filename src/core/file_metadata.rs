@@ -182,4 +182,20 @@ impl FileMetadata {
             kind: EntryType::File { size, extension: "txt".to_string() },
         }
     }
+
+    pub fn with_is_dir(mut self, is_dir: bool) -> Self {
+        if is_dir {
+            self.kind = EntryType::Dir { child_count: 0 };
+        } else {
+            self.kind = EntryType::File { size: 0, extension: "".to_string() };
+        }
+        self
+    }
+
+    pub fn with_extension(mut self, extension: String) -> Self {
+        if let EntryType::File { size, .. } = self.kind {
+            self.kind = EntryType::File { size, extension };
+        }
+        self
+    }
 }

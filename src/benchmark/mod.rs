@@ -14,6 +14,7 @@ use crate::sorting::insertion_sort::InsertionSort;
 use crate::sorting::merge_sort::MergeSort;
 use crate::sorting::quick_sort::QuickSort;
 use crate::sorting::selection_sort::SelectionSort;
+use crate::sorting::counting_sort::CountingSort;
 use crate::sorting::{SortCriteria, Sorter};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,7 +80,38 @@ pub fn run_sort_benchmarks(files: &[FileMetadata], criteria: SortCriteria) -> Ve
         bench_sorter::<QuickSort>("QuickSort", files, criteria),
         bench_sorter::<MergeSort>("MergeSort", files, criteria),
         bench_sorter::<HeapSort>("HeapSort", files, criteria),
+        bench_sorter::<CountingSort>("CountingSort", files, criteria),
     ]
+}
+
+/// Gera 10.000 arquivos variando entre diretórios e algumas extensões comuns.
+pub fn run_type_cardinality_benchmark() -> Vec<BenchmarkResult> {
+    let extensions = ["txt", "png", "rs", "toml", "md", "jpg", "pdf", "docx"];
+    let n = 10_000;
+    let mut files: Vec<FileMetadata> = (0..n)
+        .map(|i| {
+            if i % 10 == 0 {
+                // Diretório
+                FileMetadata::new_mock_for_test(format!("dir_{:05}", i), 0).with_is_dir(true)
+            } else {
+                // Arquivo com extensão
+                let ext = extensions[i % extensions.len()];
+                FileMetadata::new_mock_for_test(format!("file_{:05}.{}", i, ext), i as u64).with_extension(ext.to_string())
+            }
+        })
+        .collect();
+
+    let mut results = Vec::new();
+
+    let mut merge = bench_sorter::<MergeSort>("MergeSort", &files, SortCriteria::Tipo);
+    merge.kind = "type_cardinality_10k".to_string();
+    results.push(merge);
+
+    let mut counting = bench_sorter::<CountingSort>("CountingSort", &files, SortCriteria::Tipo);
+    counting.kind = "type_cardinality_10k".to_string();
+    results.push(counting);
+
+    results
 }
 
 /// Gera uma lista de N arquivos quase-ordenados por nome, com 1 elemento fora de posição.
