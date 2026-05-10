@@ -2067,6 +2067,7 @@ dependencies = [
  "dashmap 6.1.0",
  "rayon",
  "serde",
+ "serde_json",
  "slint",
  "slint-build",
  "srusty-files",
