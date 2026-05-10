@@ -7,6 +7,11 @@ Projeto acadêmico do Grupo 18 para a disciplina de Estruturas de Dados e Algori
 Aplicar e comparar algoritmos de **ordenação** e **busca** em um explorador de arquivos real,
 medindo desempenho e eficiência em cenários práticos.
 
+## Análise e Comparativo de Algoritmos
+
+Após a implementação dos algoritmos, consolidamos um relatório prático focando em **"qual algoritmo escolher de acordo com a situação"**. Os resultados comparativos detalhados, os benchmarks contra os cenários mapeados e a conclusão acadêmica estão na seção:
+👉 [**Análise de Algoritmos**](ANALISE_ALGORITMOS.md)
+
 ## Stack
 
 - **Linguagem:** Rust.

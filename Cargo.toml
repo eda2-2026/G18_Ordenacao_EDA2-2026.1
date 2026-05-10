@@ -2,6 +2,7 @@
 name = "file_explorer_eda2"
 version = "0.1.0"
 edition = "2024"
+default-run = "file_explorer_eda2"
 
 [dependencies]
 
