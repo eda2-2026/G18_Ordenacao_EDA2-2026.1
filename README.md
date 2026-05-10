@@ -31,8 +31,6 @@ src/
 │   │   └── toolbar.slint
 │   └── styles/
 │       └── theme.slint
-└── windows/
-    └── mod.rs
 ```
 
 ## Setup

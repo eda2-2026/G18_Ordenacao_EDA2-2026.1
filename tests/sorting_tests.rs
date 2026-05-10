@@ -3,6 +3,10 @@ use std::io::Write;
 use file_explorer_eda2::core::file_metadata::FileMetadata;
 use file_explorer_eda2::sorting::{SortCriteria, Sorter, heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort};
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
     let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
     let temp_dir = std::env::temp_dir().join(format!(
@@ -10,6 +14,8 @@ fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
         std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_nanos(),
         thread_id,
     ));
+    let count = COUNTER.fetch_add(1, Ordering::SeqCst);
+    let temp_dir = std::env::temp_dir().join(format!("eda2_sort_tests_{}_{}", std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_millis(), count));
     std::fs::create_dir_all(&temp_dir).unwrap();
 
     // 1. A dir "Z_Dir"
@@ -19,9 +25,11 @@ fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
     // 3. A file "C_File.txt" of size 10
     let mut f1 = File::create(temp_dir.join("C_File.txt")).unwrap();
     f1.write_all(b"0123456789").unwrap();
-    // 4. A file "B_File.png" of size 5
     let mut f2 = File::create(temp_dir.join("B_File.png")).unwrap();
     f2.write_all(b"12345").unwrap();
+
+    drop(f1);
+    drop(f2);
 
     let items = FileMetadata::list_all_by_path(&temp_dir);
     (temp_dir, items)
