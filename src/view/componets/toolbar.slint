@@ -1,4 +1,4 @@
-import { LineEdit } from "std-widgets.slint";
+import { LineEdit, ComboBox } from "std-widgets.slint";
 import { Theme } from "../styles/theme.slint";
 
 component NavButton inherits Rectangle {
@@ -27,12 +27,16 @@ component NavButton inherits Rectangle {
 
 export component Toolbar inherits Rectangle {
     in-out property <string> current-path: "/";
+    in-out property <string> search-query: "";
+    in-out property <int> sort-index: 0;
 
     callback navigate-forward();
     callback navigate-back();
     callback navigate-up();
     callback path-changed();
     callback refresh();
+    callback search-changed();
+    callback sort-changed();
 
     height: 46px;
     background: Theme.surface;
@@ -95,6 +99,43 @@ export component Toolbar inherits Rectangle {
         NavButton {
             icon: "⟳";
             clicked => { refresh(); }
+        }
+
+        Rectangle { width: 4px; }
+
+        // Barra de busca
+        Rectangle {
+            width: 150px;
+            height: 30px;
+            border-radius: Theme.border-radius;
+            background: Theme.background;
+            border-width: 1px;
+            border-color: Theme.border;
+            clip: true;
+
+            LineEdit {
+                x: 0; y: 0;
+                width: parent.width;
+                height: parent.height;
+                text <=> root.search-query;
+                placeholder-text: "Buscar...";
+                accepted => {
+                    root.search-changed();
+                }
+            }
+        }
+
+        Rectangle { width: 4px; }
+
+        // Ordenação
+        ComboBox {
+            width: 120px;
+            height: 30px;
+            model: ["Nome", "Tamanho", "Data", "Tipo"];
+            current-index <=> root.sort-index;
+            selected => {
+                root.sort-changed();
+            }
         }
     }
 }

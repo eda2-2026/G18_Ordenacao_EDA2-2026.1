@@ -117,7 +117,7 @@ impl FileMetadata {
         if let Ok(m) = metadata {
             if let Ok(time) = m.modified() {
                 let dt: DateTime<Local> = time.into();
-                return dt.format("&d/%m/%Y %H:%M").to_string();
+                return dt.format("%d/%m/%Y %H:%M").to_string();
             }
         }
         "--/--/----".to_string()
