@@ -1,7 +1,7 @@
 use file_explorer_eda2::core::file_metadata::{ClickResult, FileMetadata};
 use file_explorer_eda2::sorting::{
     SortCriteria, Sorter,
-    heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort
+    heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort, counting_sort::CountingSort
 };
 use file_explorer_eda2::search::{Searcher, linear_search::LinearSearch};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
@@ -55,6 +55,7 @@ fn do_navigate(ui: &MainWindow, path: &Path) {
 
     let mut items_merge = items.clone();
     let mut items_heap = items.clone();
+    let mut items_counting = items.clone();
 
     let start_sort = std::time::Instant::now();
     let (comps, swaps) = QuickSort::sort(&mut items, criteria);
@@ -63,12 +64,13 @@ fn do_navigate(ui: &MainWindow, path: &Path) {
     
     let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
     let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+    let (comps_count, swaps_count) = CountingSort::sort(&mut items_counting, criteria);
 
     let criteria_str = if criteria == SortCriteria::Nome { "Nome" } else if criteria == SortCriteria::Tamanho { "Tamanho" } else if criteria == SortCriteria::Data { "Data" } else { "Tipo" };
     let mut detailed = format!(
-        "Navegação (Ordenação por {})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+        "Navegação (Ordenação por {})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas\n- CountingSort: {} comps, {} trocas",
         criteria_str,
-        comps, swaps, comps_merge, swaps_merge, comps_heap, swaps_heap
+        comps, swaps, comps_merge, swaps_merge, comps_heap, swaps_heap, comps_count, swaps_count
     );
   
     // Ordem crescente/decrescente
@@ -278,6 +280,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
             let mut items_merge = items.clone();
             let mut items_heap = items.clone();
+            let mut items_counting = items.clone();
 
             let start_sort = std::time::Instant::now();
             let (comps_quick, swaps_quick) = QuickSort::sort(&mut items, criteria);
@@ -286,14 +289,16 @@ fn main() -> Result<(), slint::PlatformError> {
 
             let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
             let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+            let (comps_count, swaps_count) = CountingSort::sort(&mut items_counting, criteria);
 
             let mut detailed = format!(
-                "Ordenação: {} {}\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+                "Ordenação: {} {}\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas\n- CountingSort: {} comps, {} trocas",
                 criterion,
                 if ascending { "↑" } else { "↓" },
                 comps_quick, swaps_quick,
                 comps_merge, swaps_merge,
-                comps_heap, swaps_heap
+                comps_heap, swaps_heap,
+                comps_count, swaps_count
             );
 
             if !ascending {
@@ -305,6 +310,7 @@ fn main() -> Result<(), slint::PlatformError> {
             println!("- QuickSort comparou {} vezes e fez {} trocas", comps_quick, swaps_quick);
             println!("- MergeSort comparou {} vezes e fez {} trocas", comps_merge, swaps_merge);
             println!("- HeapSort comparou  {} vezes e fez {} trocas", comps_heap, swaps_heap);
+            println!("- CountingSort comparou {} vezes e fez {} trocas", comps_count, swaps_count);
             println!("--------------------------------------------------");
 
             let query = ui.get_search_query();
@@ -338,6 +344,7 @@ fn main() -> Result<(), slint::PlatformError> {
             
             let mut items_merge = items.clone();
             let mut items_heap = items.clone();
+            let mut items_counting = items.clone();
 
             let start_sort = std::time::Instant::now();
             let (comps_quick, swaps_quick) = QuickSort::sort(&mut items, criteria);
@@ -346,14 +353,16 @@ fn main() -> Result<(), slint::PlatformError> {
             
             let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
             let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+            let (comps_count, swaps_count) = CountingSort::sort(&mut items_counting, criteria);
 
             let criteria_str = if criteria == SortCriteria::Nome { "Nome" } else if criteria == SortCriteria::Tamanho { "Tamanho" } else if criteria == SortCriteria::Data { "Data" } else { "Tipo" };
             let mut detailed = format!(
-                "Busca com Ordenação ({})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+                "Busca com Ordenação ({})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas\n- CountingSort: {} comps, {} trocas",
                 criteria_str,
                 comps_quick, swaps_quick,
                 comps_merge, swaps_merge,
-                comps_heap, swaps_heap
+                comps_heap, swaps_heap,
+                comps_count, swaps_count
             );
             
             if !ui.get_sort_ascending() {

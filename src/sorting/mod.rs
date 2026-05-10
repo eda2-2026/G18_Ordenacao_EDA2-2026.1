@@ -57,6 +57,24 @@ o Insertion Sort supera o Merge Sort em tempo de execução e número de compara
 
 ---
 
+## Análise de Cardinalidade e Algoritmos Não-Comparativos (`SortCriteria::Tipo`)
+
+A ordenação por tipo (diretório vs arquivo) e extensão demonstra a importância do conceito de **cardinalidade**. A cardinalidade é o número de valores distintos que uma chave de ordenação pode assumir.
+
+- **Baixa Cardinalidade**: `SortCriteria::Tipo` separa apenas entre 2 categorias (Diretório e Arquivo), ou algumas dezenas se considerarmos extensões únicas.
+- **Alta Cardinalidade**: `SortCriteria::Tamanho` ou `SortCriteria::Nome` (praticamente todos os valores são únicos).
+
+Quando a cardinalidade $k$ é muito menor que o número de elementos $N$ ($k \ll N$), algoritmos baseados em comparações ($O(n \log n)$) fazem um trabalho ineficiente, pois perdem tempo comparando elementos que poderiam ser simplesmente agrupados. 
+
+### O Poder do Counting Sort
+Neste cenário, podemos quebrar o limite inferior de $O(n \log n)$ utilizando um **algoritmo não-comparativo** como o **Counting Sort**. 
+
+A estratégia para `SortCriteria::Tipo` é:
+1. Mapear as categorias (Diretório = 0, Extensões = 1..k).
+2. Distribuir os elementos em seus baldes (buckets/counts) correspondentes.
+3. Isso exige uma varredura para contar e outra para distribuir, resultando em um tempo real de **$O(n + k)$**.
+
+Para 10.000 itens (com apenas 20 extensões diferentes), o Counting Sort supera imensamente o Merge/Quick Sort, demonstrando que explorar a estrutura semântica dos dados permite escolhas algorítmicas muito mais precisas.
 ## Análise de Algoritmos para Datas (`SortCriteria::Data`)
 
 A ordenação por data de modificação (timestamp `u64`) tem uma característica especial: **múltiplos arquivos podem compartilhar o mesmo timestamp** — por exemplo, arquivos extraídos de um `.zip` ou criados em lote por uma operação de sistema. Isso torna a **estabilidade** do algoritmo observável pelo usuário.
@@ -94,6 +112,7 @@ pub mod common;
 pub mod heap_sort;
 pub mod merge_sort;
 pub mod quick_sort;
+pub mod counting_sort;
 
 pub mod bubble_sort;
 pub mod selection_sort;
@@ -104,3 +123,4 @@ pub use common::*;
 pub use bubble_sort::BubbleSort;
 pub use selection_sort::SelectionSort;
 pub use insertion_sort::InsertionSort;
+pub use counting_sort::CountingSort;
