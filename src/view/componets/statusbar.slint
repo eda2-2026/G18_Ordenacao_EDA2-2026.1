@@ -4,6 +4,9 @@ export component StatusBar inherits Rectangle {
     in property <string> item-count: "0 itens";
     in property <string> selected-info: "";
     in property <string> disk-space: "";
+    in property <string> sort-info: "";
+    in property <string> search-info: "";
+    callback toggle-metrics();
 
     height: 26px;
     background: Theme.surface;
@@ -43,7 +46,51 @@ export component StatusBar inherits Rectangle {
             overflow: elide;
         }
 
+        Rectangle {
+            width: sort-info != "" ? 1px : 0px;
+            height: 14px;
+            background: Theme.border;
+            vertical-stretch: 0;
+            visible: sort-info != "";
+        }
+
+        Text {
+            text: sort-info;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+            visible: sort-info != "";
+        }
+
+        Rectangle {
+            width: search-info != "" ? 1px : 0px;
+            height: 14px;
+            background: Theme.border;
+            vertical-stretch: 0;
+            visible: search-info != "";
+        }
+
+        Text {
+            text: search-info;
+            color: Theme.text-secondary;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+            visible: search-info != "";
+        }
+
         Rectangle { horizontal-stretch: 1; }
+
+        TouchArea {
+            width: btn_text.preferred-width;
+            visible: sort-info != "" || search-info != "";
+            clicked => { root.toggle-metrics(); }
+            btn_text := Text {
+                text: "[+] Mais info";
+                color: Theme.primary;
+                font-size: Theme.font-small;
+                vertical-alignment: center;
+            }
+        }
 
         Text {
             text: disk-space;

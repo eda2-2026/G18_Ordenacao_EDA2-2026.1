@@ -1,7 +1,7 @@
 use crate::core::file_metadata::FileMetadata;
 use std::cmp::Ordering;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SortCriteria {
     Nome,
     Tamanho,

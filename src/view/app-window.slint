@@ -22,6 +22,10 @@ export component MainWindow inherits Window {
     in-out property <string> search-query: "";
     in-out property <int> sort-index: 0;
     in-out property <bool> sort-ascending: true;
+    in-out property <string> sort-info: "";
+    in-out property <string> search-info: "";
+    in-out property <string> detailed-metrics: "";
+    in-out property <bool> show-metrics: false;
 
     callback navigate-back();
     callback navigate-forward();
@@ -81,11 +85,34 @@ export component MainWindow inherits Window {
                 }
             }
 
+            if root.show-metrics : Rectangle {
+                background: Theme.surface;
+                height: 120px;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                VerticalLayout {
+                    padding: Theme.padding-large;
+                    
+                    Text {
+                        text: root.detailed-metrics;
+                        color: Theme.text-primary;
+                        font-size: Theme.font-small;
+                        wrap: word-wrap;
+                        vertical-alignment: top;
+                        horizontal-alignment: left;
+                    }
+                }
+            }
+
             statusbar := StatusBar {
                 item-count: root.files.length + " itens";
                 selected-info: root.selected-file-index >= 0 ?
                               root.files[root.selected-file-index].name : "";
+                sort-info: root.sort-info;
+                search-info: root.search-info;
                 disk-space: "";
+                toggle-metrics => { root.show-metrics = !root.show-metrics; }
             }
         }
     }

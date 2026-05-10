@@ -53,7 +53,23 @@ fn do_navigate(ui: &MainWindow, path: &Path) {
     let mut items = FileMetadata::list_all_by_path(path);
     let criteria = get_criteria_from_index(ui.get_sort_index());
 
-    QuickSort::sort(&mut items, criteria);
+    let mut items_merge = items.clone();
+    let mut items_heap = items.clone();
+
+    let start_sort = std::time::Instant::now();
+    let (comps, swaps) = QuickSort::sort(&mut items, criteria);
+    let sort_time = start_sort.elapsed().as_millis();
+    ui.set_sort_info(format!("QuickSort: {}ms ({} comps, {} trocas)", sort_time, comps, swaps).into());
+    
+    let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
+    let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+
+    let criteria_str = if criteria == SortCriteria::Nome { "Nome" } else if criteria == SortCriteria::Tamanho { "Tamanho" } else if criteria == SortCriteria::Data { "Data" } else { "Tipo" };
+    let mut detailed = format!(
+        "Navegação (Ordenação por {})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+        criteria_str,
+        comps, swaps, comps_merge, swaps_merge, comps_heap, swaps_heap
+    );
   
     // Ordem crescente/decrescente
     if !ui.get_sort_ascending() {
@@ -64,10 +80,18 @@ fn do_navigate(ui: &MainWindow, path: &Path) {
     let query = ui.get_search_query();
     let query_str = query.as_str();
     if !query_str.trim().is_empty() {
-        let (indices, comps) = LinearSearch::search(&items, query_str);
+        let start_search = std::time::Instant::now();
+        let (indices, comps_search) = LinearSearch::search(&items, query_str);
+        let search_time = start_search.elapsed().as_millis();
         items = indices.into_iter().map(|i| items[i].clone()).collect();
-        println!("do_navigate: Busca por '{}' resultou em {} itens ({} comparações)", query_str, items.len(), comps);
+        println!("do_navigate: Busca por '{}' resultou em {} itens ({} comparações)", query_str, items.len(), comps_search);
+        ui.set_search_info(format!("LinearSearch: {}ms ({} comps)", search_time, comps_search).into());
+        detailed.push_str(&format!("\n\nBusca Linear\n- Tempo: {}ms\n- Comparações: {}", search_time, comps_search));
+    } else {
+        ui.set_search_info("".into());
     }
+
+    ui.set_detailed_metrics(detailed.into());
 
     ui.set_current_path(path.to_string_lossy().to_string().into());
     ui.set_files(map_to_slint(items));
@@ -255,9 +279,22 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut items_merge = items.clone();
             let mut items_heap = items.clone();
 
+            let start_sort = std::time::Instant::now();
             let (comps_quick, swaps_quick) = QuickSort::sort(&mut items, criteria);
+            let sort_time = start_sort.elapsed().as_millis();
+            ui.set_sort_info(format!("QuickSort: {}ms ({} comps, {} trocas)", sort_time, comps_quick, swaps_quick).into());
+
             let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
             let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+
+            let mut detailed = format!(
+                "Ordenação: {} {}\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+                criterion,
+                if ascending { "↑" } else { "↓" },
+                comps_quick, swaps_quick,
+                comps_merge, swaps_merge,
+                comps_heap, swaps_heap
+            );
 
             if !ascending {
                 items.reverse();
@@ -273,10 +310,18 @@ fn main() -> Result<(), slint::PlatformError> {
             let query = ui.get_search_query();
             let query_str = query.as_str();
             if !query_str.trim().is_empty() {
+                let start_search = std::time::Instant::now();
                 let (indices, comps) = LinearSearch::search(&items, query_str);
+                let search_time = start_search.elapsed().as_millis();
                 items = indices.into_iter().map(|i| items[i].clone()).collect();
                 println!("sort_changed: Busca por '{}' resultou em {} itens ({} comparações)", query_str, items.len(), comps);
+                ui.set_search_info(format!("LinearSearch: {}ms ({} comps)", search_time, comps).into());
+                detailed.push_str(&format!("\n\nBusca Linear\n- Tempo: {}ms\n- Comparações: {}", search_time, comps));
+            } else {
+                ui.set_search_info("".into());
             }
+
+            ui.set_detailed_metrics(detailed.into());
 
             ui.set_files(map_to_slint(items));
             ui.set_selected_file_index(-1);
@@ -290,14 +335,45 @@ fn main() -> Result<(), slint::PlatformError> {
             let current = PathBuf::from(ui.get_current_path().as_str());
             let mut items = FileMetadata::list_all_by_path(&current);
             let criteria = get_criteria_from_index(ui.get_sort_index());
-            QuickSort::sort(&mut items, criteria);
             
+            let mut items_merge = items.clone();
+            let mut items_heap = items.clone();
+
+            let start_sort = std::time::Instant::now();
+            let (comps_quick, swaps_quick) = QuickSort::sort(&mut items, criteria);
+            let sort_time = start_sort.elapsed().as_millis();
+            ui.set_sort_info(format!("QuickSort: {}ms ({} comps, {} trocas)", sort_time, comps_quick, swaps_quick).into());
+            
+            let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
+            let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
+
+            let criteria_str = if criteria == SortCriteria::Nome { "Nome" } else if criteria == SortCriteria::Tamanho { "Tamanho" } else if criteria == SortCriteria::Data { "Data" } else { "Tipo" };
+            let mut detailed = format!(
+                "Busca com Ordenação ({})\n- QuickSort: {} comps, {} trocas\n- MergeSort: {} comps, {} trocas\n- HeapSort: {} comps, {} trocas",
+                criteria_str,
+                comps_quick, swaps_quick,
+                comps_merge, swaps_merge,
+                comps_heap, swaps_heap
+            );
+            
+            if !ui.get_sort_ascending() {
+                items.reverse();
+            }
+
             let query_str = query.as_str();
             if !query_str.trim().is_empty() {
+                let start_search = std::time::Instant::now();
                 let (indices, comps) = LinearSearch::search(&items, query_str);
+                let search_time = start_search.elapsed().as_millis();
                 println!("search_changed: Busca por '{}' resultou em {} itens ({} comparações)", query_str, indices.len(), comps);
                 items = indices.into_iter().map(|i| items[i].clone()).collect();
+                ui.set_search_info(format!("LinearSearch: {}ms ({} comps)", search_time, comps).into());
+                detailed.push_str(&format!("\n\nBusca Linear\n- Tempo: {}ms\n- Comparações: {}", search_time, comps));
+            } else {
+                ui.set_search_info("".into());
             }
+
+            ui.set_detailed_metrics(detailed.into());
 
             ui.set_files(map_to_slint(items));
             ui.set_selected_file_index(-1);

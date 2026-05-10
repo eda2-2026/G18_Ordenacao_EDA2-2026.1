@@ -43,14 +43,14 @@ fn bench_sorter<S: Sorter>(
 ) -> BenchmarkResult {
     let mut data = files.to_vec();
     let start = Instant::now();
-    let comparisons = S::sort(&mut data, criteria);
+    let (comparisons, swaps) = S::sort(&mut data, criteria);
     let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
     BenchmarkResult {
         algorithm: name.to_string(),
         kind: "sort".to_string(),
         duration_ms,
         comparisons,
-        swaps: 0,
+        swaps,
     }
 }
 
@@ -80,6 +80,53 @@ pub fn run_sort_benchmarks(files: &[FileMetadata], criteria: SortCriteria) -> Ve
         bench_sorter::<MergeSort>("MergeSort", files, criteria),
         bench_sorter::<HeapSort>("HeapSort", files, criteria),
     ]
+}
+
+/// Gera uma lista de N arquivos quase-ordenados por nome, com 1 elemento fora de posição.
+/// O último elemento (lexicograficamente o maior) é movido para o início,
+/// simulando a adição de um novo arquivo em um diretório já ordenado.
+fn make_nearly_sorted_by_name(n: usize) -> Vec<FileMetadata> {
+    let mut files: Vec<FileMetadata> = (0..n)
+        .map(|i| FileMetadata::new_mock_for_test(format!("file_{:06}", i), i as u64))
+        .collect();
+    // move o último para o início — cria exatamente n-1 inversões
+    let last = files.remove(n - 1);
+    files.insert(0, last);
+    files
+}
+
+/// Benchmark específico para `SortCriteria::Nome` com listas quase-ordenadas.
+///
+/// Compara InsertionSort vs MergeSort para N = 100, 1_000 e 10_000 arquivos,
+/// cada lista com apenas 1 elemento fora de posição (cenário de re-ordenação incremental).
+/// Verifica a hipótese: InsertionSort supera MergeSort quando o número de inversões é mínimo.
+pub fn run_nearly_sorted_name_benchmark() -> Vec<BenchmarkResult> {
+    let sizes = [100usize, 1_000, 10_000];
+    let mut results = Vec::with_capacity(sizes.len() * 2);
+
+    for &n in &sizes {
+        let files = make_nearly_sorted_by_name(n);
+        let label_suffix = format!("_n{n}_nearly_sorted_name");
+
+        let mut insertion = bench_sorter::<InsertionSort>(
+            &format!("InsertionSort{label_suffix}"),
+            &files,
+            SortCriteria::Nome,
+        );
+        insertion.kind = "nearly_sorted_name".to_string();
+
+        let mut merge = bench_sorter::<MergeSort>(
+            &format!("MergeSort{label_suffix}"),
+            &files,
+            SortCriteria::Nome,
+        );
+        merge.kind = "nearly_sorted_name".to_string();
+
+        results.push(insertion);
+        results.push(merge);
+    }
+
+    results
 }
 
 pub fn run_search_benchmarks(files: &[FileMetadata], query: &str) -> Vec<BenchmarkResult> {
