@@ -1,0 +1,85 @@
+use std::fs::File;
+use std::io::Write;
+use file_explorer_eda2::core::file_metadata::FileMetadata;
+use file_explorer_eda2::search::{Searcher, BinarySearch};
+use file_explorer_eda2::sorting::{SortCriteria, Sorter, quick_sort::QuickSort};
+
+fn setup_search_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
+    let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
+    let temp_dir = std::env::temp_dir().join(format!(
+        "eda2_search_tests_{}_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos(),
+        thread_id,
+    ));
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    std::fs::create_dir(temp_dir.join("Banana_Dir")).unwrap();
+    std::fs::create_dir(temp_dir.join("Alpha_Dir")).unwrap();
+    File::create(temp_dir.join("Banana_Notes.txt")).unwrap().write_all(b"content").unwrap();
+    File::create(temp_dir.join("Carrot.png")).unwrap().write_all(b"img").unwrap();
+    File::create(temp_dir.join("Apple.rs")).unwrap().write_all(b"fn main() {}").unwrap();
+
+    // busca binária exige lista ordenada por nome
+    let mut items = FileMetadata::list_all_by_path(&temp_dir);
+    QuickSort::sort(&mut items, SortCriteria::Nome);
+    (temp_dir, items)
+}
+
+// Sorted: Alpha_Dir, Apple.rs, Banana_Dir, Banana_Notes.txt, Carrot.png
+
+#[test]
+fn test_binary_search_prefix_multiplos_resultados() {
+    let (dir, items) = setup_search_files();
+    let (indices, comparisons) = BinarySearch::search(&items, "Ban");
+    assert_eq!(indices.len(), 2);
+    assert!(indices.iter().all(|&i| items[i].name.to_lowercase().starts_with("ban")));
+    assert!(comparisons > 0);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn test_binary_search_sem_resultado() {
+    let (dir, items) = setup_search_files();
+    let (indices, _) = BinarySearch::search(&items, "Zucchini");
+    assert!(indices.is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn test_binary_search_nome_exato() {
+    let (dir, items) = setup_search_files();
+    let (indices, _) = BinarySearch::search(&items, "Carrot.png");
+    assert_eq!(indices.len(), 1);
+    assert_eq!(items[indices[0]].name, "Carrot.png");
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn test_binary_search_query_vazia() {
+    let (dir, items) = setup_search_files();
+    let (indices, comparisons) = BinarySearch::search(&items, "");
+    assert!(indices.is_empty());
+    assert_eq!(comparisons, 0);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn test_binary_search_case_insensitive() {
+    let (dir, items) = setup_search_files();
+    let (lower, _) = BinarySearch::search(&items, "alpha");
+    let (upper, _) = BinarySearch::search(&items, "ALPHA");
+    assert_eq!(lower, upper);
+    assert_eq!(lower.len(), 1);
+    assert_eq!(items[lower[0]].name, "Alpha_Dir");
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn test_binary_search_lista_vazia() {
+    let (indices, comparisons) = BinarySearch::search(&[], "query");
+    assert!(indices.is_empty());
+    assert_eq!(comparisons, 0);
+}

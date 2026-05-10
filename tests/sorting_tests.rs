@@ -4,7 +4,12 @@ use file_explorer_eda2::core::file_metadata::FileMetadata;
 use file_explorer_eda2::sorting::{SortCriteria, Sorter, heap_sort::HeapSort, merge_sort::MergeSort, quick_sort::QuickSort};
 
 fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
-    let temp_dir = std::env::temp_dir().join(format!("eda2_tests_{}", std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_millis()));
+    let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
+    let temp_dir = std::env::temp_dir().join(format!(
+        "eda2_tests_{}_{}",
+        std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_nanos(),
+        thread_id,
+    ));
     std::fs::create_dir_all(&temp_dir).unwrap();
 
     // 1. A dir "Z_Dir"
