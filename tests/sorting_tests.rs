@@ -8,6 +8,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 fn setup_test_files() -> (std::path::PathBuf, Vec<FileMetadata>) {
+    let thread_id = format!("{:?}", std::thread::current().id()).replace(['(', ')'], "");
+    let temp_dir = std::env::temp_dir().join(format!(
+        "eda2_tests_{}_{}",
+        std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_nanos(),
+        thread_id,
+    ));
     let count = COUNTER.fetch_add(1, Ordering::SeqCst);
     let temp_dir = std::env::temp_dir().join(format!("eda2_sort_tests_{}_{}", std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_millis(), count));
     std::fs::create_dir_all(&temp_dir).unwrap();
