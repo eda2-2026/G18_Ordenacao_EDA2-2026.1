@@ -10,7 +10,7 @@ pub enum SortCriteria {
 }
 
 pub trait Sorter {
-    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> usize;
+    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> (usize, usize);
 }
 
 pub fn compare_files(a: &FileMetadata, b: &FileMetadata, criteria: SortCriteria) -> Ordering {

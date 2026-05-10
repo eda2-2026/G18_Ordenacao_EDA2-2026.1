@@ -255,9 +255,9 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut items_merge = items.clone();
             let mut items_heap = items.clone();
 
-            let comps_quick = QuickSort::sort(&mut items, criteria);
-            let comps_merge = MergeSort::sort(&mut items_merge, criteria);
-            let comps_heap = HeapSort::sort(&mut items_heap, criteria);
+            let (comps_quick, swaps_quick) = QuickSort::sort(&mut items, criteria);
+            let (comps_merge, swaps_merge) = MergeSort::sort(&mut items_merge, criteria);
+            let (comps_heap, swaps_heap) = HeapSort::sort(&mut items_heap, criteria);
 
             if !ascending {
                 items.reverse();
@@ -265,9 +265,9 @@ fn main() -> Result<(), slint::PlatformError> {
 
             println!("--------------------------------------------------");
             println!("Ordenação: {} {}", criterion, if ascending { "↑" } else { "↓" });
-            println!("- QuickSort comparou {} vezes", comps_quick);
-            println!("- MergeSort comparou {} vezes", comps_merge);
-            println!("- HeapSort comparou  {} vezes", comps_heap);
+            println!("- QuickSort comparou {} vezes e fez {} trocas", comps_quick, swaps_quick);
+            println!("- MergeSort comparou {} vezes e fez {} trocas", comps_merge, swaps_merge);
+            println!("- HeapSort comparou  {} vezes e fez {} trocas", comps_heap, swaps_heap);
             println!("--------------------------------------------------");
 
             let query = ui.get_search_query();

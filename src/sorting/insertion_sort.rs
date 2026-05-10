@@ -6,8 +6,9 @@ use std::cmp::Ordering;
 pub struct InsertionSort;
 
 impl Sorter for InsertionSort {
-    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> usize {
+    fn sort(files: &mut Vec<FileMetadata>, criteria: SortCriteria) -> (usize, usize) {
         let mut comparisons = 0;
+        let mut swaps = 0;
         let n = files.len();
         for i in 1..n {
             let mut j = i;
@@ -15,12 +16,13 @@ impl Sorter for InsertionSort {
                 comparisons += 1;
                 if compare_files(&files[j - 1], &files[j], criteria) == Ordering::Greater {
                     files.swap(j - 1, j);
+                    swaps += 1;
                     j -= 1;
                 } else {
                     break;
                 }
             }
         }
-        comparisons
+        (comparisons, swaps)
     }
 }

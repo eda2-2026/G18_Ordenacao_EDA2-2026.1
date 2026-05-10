@@ -82,3 +82,31 @@ fn test_sorting_algorithms_by_type() {
 
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn benchmark_quick_vs_heap_10k() {
+    let mut items = Vec::with_capacity(10_000);
+    // Gerar 10k arquivos simulados com tamanhos "aleatórios"
+    for i in 0..10_000 {
+        let pseudo_random_size = (i * 137 + 73) % 10_000;
+        items.push(FileMetadata::new_mock_for_test(format!("file_{}.txt", i), pseudo_random_size as u64));
+    }
+
+    let mut items_quick = items.clone();
+    let mut items_heap = items.clone();
+
+    let (comps_q, swaps_q) = QuickSort::sort(&mut items_quick, SortCriteria::Tamanho);
+    let (comps_h, swaps_h) = HeapSort::sort(&mut items_heap, SortCriteria::Tamanho);
+
+    println!("Benchmark 10k arquivos por Tamanho:");
+    println!("QuickSort: {} comparações, {} trocas", comps_q, swaps_q);
+    println!("HeapSort : {} comparações, {} trocas", comps_h, swaps_h);
+
+    assert_eq!(items_quick.len(), 10_000);
+    assert_eq!(items_heap.len(), 10_000);
+
+    for i in 0..9_999 {
+        assert!(items_quick[i].raw_size() <= items_quick[i+1].raw_size());
+        assert!(items_heap[i].raw_size() <= items_heap[i+1].raw_size());
+    }
+}
