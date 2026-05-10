@@ -12,6 +12,9 @@ medindo desempenho e eficiência em cenários práticos.
 Após a implementação dos algoritmos, consolidamos um relatório prático focando em **"qual algoritmo escolher de acordo com a situação"**. Os resultados comparativos detalhados, os benchmarks contra os cenários mapeados e a conclusão acadêmica estão na seção:
 👉 [**Análise de Algoritmos**](ANALISE_ALGORITMOS.md)
 
+## Apresentação em Vídeo do Projeto:
+- https://youtu.be/0Aonp0l2pCY
+
 ## Stack
 
 - **Linguagem:** Rust.
