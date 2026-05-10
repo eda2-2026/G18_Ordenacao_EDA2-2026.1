@@ -21,6 +21,7 @@ export component MainWindow inherits Window {
 
     in-out property <string> search-query: "";
     in-out property <int> sort-index: 0;
+    in-out property <bool> sort-ascending: true;
 
     callback navigate-back();
     callback navigate-forward();
@@ -31,7 +32,7 @@ export component MainWindow inherits Window {
     callback location-selected(int);
     callback file-double-click(int);
     callback search-changed(string);
-    callback sort-changed(int);
+    callback sort-requested(string);
 
     HorizontalLayout {
         spacing: 0px;
@@ -51,13 +52,20 @@ export component MainWindow inherits Window {
                 current-path <=> root.current-path;
                 search-query <=> root.search-query;
                 sort-index <=> root.sort-index;
+                sort-ascending <=> root.sort-ascending;
                 navigate-back => { root.navigate-back(); }
                 navigate-forward => { root.navigate-forward(); }
                 navigate-up => { root.navigate-up(); }
                 path-changed => { root.navigate-to(root.current-path); }
                 refresh => { root.refresh-files(); }
                 search-changed => { root.search-changed(root.search-query); }
-                sort-changed => { root.sort-changed(root.sort-index); }
+                sort-changed => {
+                    root.sort-requested(
+                        toolbar.sort-index == 0 ? "Nome" :
+                        toolbar.sort-index == 1 ? "Tamanho" :
+                        toolbar.sort-index == 2 ? "Data" : "Tipo"
+                    );
+                }
             }
 
             file-list := FileList {
